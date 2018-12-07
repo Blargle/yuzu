@@ -1037,6 +1037,15 @@ bool VMManager::IsWithinASLRRegion(VAddr begin, u64 size) const {
     return true;
 }
 
+bool VMManager::IsWithinReservedRegion(VAddr address, u64 size) const {
+    if (!IsWithinAddressSpace(address, size)) {
+        return false;
+    }
+
+    const VAddr range_end = address + size;
+    return map_region_base <= address && address < range_end && range_end - 1 <= map_region_end - 1;
+}
+
 VAddr VMManager::GetCodeRegionBaseAddress() const {
     return code_region_base;
 }
@@ -1123,6 +1132,10 @@ u64 VMManager::GetTLSIORegionSize() const {
 bool VMManager::IsWithinTLSIORegion(VAddr address, u64 size) const {
     return IsInsideAddressRange(address, size, GetTLSIORegionBaseAddress(),
                                 GetTLSIORegionEndAddress());
+}
+
+u64 VMManager::GetPhysicalMemoryUsage() const {
+    return physical_memory_used;
 }
 
 } // namespace Kernel
