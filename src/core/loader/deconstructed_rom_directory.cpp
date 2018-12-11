@@ -136,6 +136,7 @@ ResultStatus AppLoader_DeconstructedRomDirectory::Load(Kernel::Process& process)
     const FileSys::PatchManager pm(metadata.GetTitleID());
 
     // Load NSO modules
+    u64 total_image_size = 0;
     const VAddr base_address = process.VMManager().GetCodeRegionBaseAddress();
     VAddr next_load_addr = base_address;
     for (const auto& module : {"rtld", "main", "subsdk0", "subsdk1", "subsdk2", "subsdk3",
@@ -153,13 +154,15 @@ ResultStatus AppLoader_DeconstructedRomDirectory::Load(Kernel::Process& process)
             return ResultStatus::ErrorLoadingNSO;
         }
 
+        total_image_size += *tentative_next_load_addr - load_addr;
         next_load_addr = *tentative_next_load_addr;
         LOG_DEBUG(Loader, "loaded module {} @ 0x{:X}", module, load_addr);
         // Register module with GDBStub
         GDBStub::RegisterModule(module, load_addr, next_load_addr - 1, false);
     }
 
-    process.Run(base_address, metadata.GetMainThreadPriority(), metadata.GetMainThreadStackSize());
+    process.Run(base_address, metadata.GetMainThreadPriority(), metadata.GetMainThreadStackSize(),
+                total_image_size);
 
     // Find the RomFS by searching for a ".romfs" file in this directory
     const auto& files = dir->GetFiles();

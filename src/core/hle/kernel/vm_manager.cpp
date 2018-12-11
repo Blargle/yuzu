@@ -981,9 +981,8 @@ ResultVal<std::size_t> VMManager::SizeOfPhysicalMemoryBlocksToUnmap(VAddr addres
     return MakeResult(total_size);
 }
 
-u64 VMManager::GetTotalMemoryUsage() const {
-    LOG_WARNING(Kernel, "(STUBBED) called");
-    return 0xF8000000;
+u64 VMManager::GetTotalHeapUsage() const {
+    return heap_used;
 }
 
 VAddr VMManager::GetAddressSpaceBaseAddress() const {

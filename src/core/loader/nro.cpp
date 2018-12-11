@@ -129,8 +129,8 @@ static constexpr u32 PageAlignSize(u32 size) {
     return (size + Memory::PAGE_MASK) & ~Memory::PAGE_MASK;
 }
 
-static bool LoadNroImpl(Kernel::Process& process, const std::vector<u8>& data,
-                        const std::string& name, VAddr load_base) {
+static std::optional<u64> LoadNroImpl(Kernel::Process& process, const std::vector<u8>& data,
+                                      const std::string& name, VAddr load_base) {
     if (data.size() < sizeof(NroHeader)) {
         return {};
     }
@@ -185,6 +185,7 @@ static bool LoadNroImpl(Kernel::Process& process, const std::vector<u8>& data,
 
     codeset.DataSegment().size += bss_size;
     program_image.resize(static_cast<u32>(program_image.size()) + bss_size);
+    const std::size_t image_size = program_image.size();
 
     // Load codeset for current process
     codeset.memory = std::move(program_image);
@@ -193,11 +194,11 @@ static bool LoadNroImpl(Kernel::Process& process, const std::vector<u8>& data,
     // Register module with GDBStub
     GDBStub::RegisterModule(name, load_base, load_base);
 
-    return true;
+    return image_size;
 }
 
-bool AppLoader_NRO::LoadNro(Kernel::Process& process, const FileSys::VfsFile& file,
-                            VAddr load_base) {
+std::optional<u64> AppLoader_NRO::LoadNro(Kernel::Process& process, const FileSys::VfsFile& file,
+                                          VAddr load_base) {
     return LoadNroImpl(process, file.ReadAllBytes(), file.GetName(), load_base);
 }
 
@@ -209,14 +210,15 @@ ResultStatus AppLoader_NRO::Load(Kernel::Process& process) {
     // Load NRO
     const VAddr base_address = process.VMManager().GetCodeRegionBaseAddress();
 
-    if (!LoadNro(process, *file, base_address)) {
+    const auto image_size = LoadNro(process, *file, base_address);
+    if (!image_size) {
         return ResultStatus::ErrorLoadingNRO;
     }
 
     if (romfs != nullptr)
         Service::FileSystem::RegisterRomFS(std::make_unique<FileSys::RomFSFactory>(*this));
 
-    process.Run(base_address, Kernel::THREADPRIO_DEFAULT, Memory::DEFAULT_STACK_SIZE);
+    process.Run(base_address, Kernel::THREADPRIO_DEFAULT, Memory::DEFAULT_STACK_SIZE, *image_size);
 
     is_loaded = true;
     return ResultStatus::Success;

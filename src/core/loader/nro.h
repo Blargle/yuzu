@@ -46,7 +46,8 @@ public:
     bool IsRomFSUpdatable() const override;
 
 private:
-    bool LoadNro(Kernel::Process& process, const FileSys::VfsFile& file, VAddr load_base);
+    std::optional<u64> LoadNro(Kernel::Process& process, const FileSys::VfsFile& file,
+                               VAddr load_base);
 
     std::vector<u8> icon_data;
     std::unique_ptr<FileSys::NACP> nacp;

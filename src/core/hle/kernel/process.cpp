@@ -85,6 +85,13 @@ void Process::UnregisterThread(const Thread* thread) {
     thread_list.remove(thread);
 }
 
+u64 Process::GetUserPhysicalMemoryUsage() const {
+    const u64 normal_memory_size =
+        vm_manager.GetHeapRegionSize() + vm_manager.GetPhysicalMemoryUsage();
+
+    return normal_memory_size + image_size + main_stack_size + extra_resource_size;
+}
+
 ResultCode Process::ClearSignalState() {
     if (status == ProcessStatus::Exited) {
         LOG_ERROR(Kernel, "called on a terminated process instance.");
@@ -120,9 +127,11 @@ ResultCode Process::LoadFromMetadata(const FileSys::ProgramMetadata& metadata) {
     return handle_table.SetSize(capabilities.GetHandleTableSize());
 }
 
-void Process::Run(VAddr entry_point, s32 main_thread_priority, u64 stack_size) {
+void Process::Run(VAddr entry_point, s32 main_thread_priority, u64 stack_size,
+    u64 total_image_size) {
     // The kernel always ensures that the given stack size is page aligned.
     main_thread_stack_size = Common::AlignUp(stack_size, Memory::PAGE_SIZE);
+    image_size = total_image_size;
 
     // Allocate and map the main thread stack
     // TODO(bunnei): This is heap area that should be allocated by the kernel and not mapped as part

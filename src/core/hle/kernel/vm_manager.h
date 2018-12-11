@@ -528,8 +528,8 @@ public:
     /// Dumps the address space layout to the log, for debugging
     void LogLayout() const;
 
-    /// Gets the total memory usage, used by svcGetInfo
-    u64 GetTotalMemoryUsage() const;
+    /// Gets the total heap usage, used by svcGetInfo
+    u64 GetTotalHeapUsage() const;
 
     /// Gets the address space base address
     VAddr GetAddressSpaceBaseAddress() const;

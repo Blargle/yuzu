@@ -205,6 +205,8 @@ public:
     /// from this process' thread list.
     void UnregisterThread(const Thread* thread);
 
+    u64 GetUserPhysicalMemoryUsage() const;
+
     /// Clears the signaled state of the process if and only if it's signaled.
     ///
     /// @pre The process must not be already terminated. If this is called on a
@@ -229,7 +231,7 @@ public:
     /**
      * Applies address space changes and launches the process main thread.
      */
-    void Run(VAddr entry_point, s32 main_thread_priority, u64 stack_size);
+    void Run(VAddr entry_point, s32 main_thread_priority, u64 stack_size, u64 total_image_size);
 
     /**
      * Prepares a process for termination by stopping all of its threads
@@ -296,6 +298,12 @@ private:
 
     /// Contains the parsed process capability descriptors.
     ProcessCapabilities capabilities;
+
+    /// The application image size in bytes.
+    u64 image_size = 0;
+
+    /// The main stack size in bytes.
+    u64 main_stack_size = 0;
 
     /// The extra resource memory size in bytes.
     u64 extra_resource_size = 0;
