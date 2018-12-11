@@ -874,7 +874,7 @@ static ResultCode GetInfo(Core::System& system, u64* result, u64 info_id, u64 ha
             return RESULT_SUCCESS;
 
         case GetInfoType::ExtraResourceUsage:
-            *result = process->VMManager().GetPhysicalMemoryUsage();
+            *result = process->VMManager().GetMapPhysicalMemoryUsage();
             return RESULT_SUCCESS;
 
         case GetInfoType::TitleId:

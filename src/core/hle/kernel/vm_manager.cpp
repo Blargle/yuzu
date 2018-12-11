@@ -523,7 +523,7 @@ ResultCode VMManager::MapPhysicalMemory(VAddr address, std::size_t size) {
         iter = std::next(iter);
     }
 
-    physical_memory_used += size - mapped_size;
+    map_physical_memory_used += size - mapped_size;
 
     return RESULT_SUCCESS;
 }
@@ -591,7 +591,7 @@ ResultCode VMManager::UnmapPhysicalMemory(VAddr address, std::size_t size) {
         traversal_address += dealloc_size;
     }
 
-    physical_memory_used -= unmap_size;
+    map_physical_memory_used -= unmap_size;
 
     return RESULT_SUCCESS;
 }
@@ -1073,6 +1073,10 @@ u64 VMManager::GetHeapRegionSize() const {
     return heap_region_end - heap_region_base;
 }
 
+u64 VMManager::GetTotalHeapSize() const {
+    return GetHeapRegionSize() + map_physical_memory_used;
+}
+
 u64 VMManager::GetCurrentHeapSize() const {
     return heap_end - heap_region_base;
 }
@@ -1132,8 +1136,8 @@ bool VMManager::IsWithinTLSIORegion(VAddr address, u64 size) const {
                                 GetTLSIORegionEndAddress());
 }
 
-u64 VMManager::GetPhysicalMemoryUsage() const {
-    return physical_memory_used;
+u64 VMManager::GetMapPhysicalMemoryUsage() const {
+    return map_physical_memory_used;
 }
 
 } // namespace Kernel
