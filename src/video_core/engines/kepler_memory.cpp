@@ -53,15 +53,17 @@ void KeplerMemory::ProcessData(u32 data, bool is_last_call) {
     state.write_offset += sub_copy_size;
     if (is_last_call) {
         UNIMPLEMENTED_IF_MSG(regs.exec.linear == 0, "Block Linear Copy is not implemented");
-        const GPUVAddr address{regs.dest.Address()};
-        const auto host_ptr = memory_manager.GetPointer(address);
-        // We have to invalidate the destination region to evict any outdated surfaces from the
-        // cache. We do this before actually writing the new data because the destination
-        // address might contain a dirty surface that will have to be written back to memory.
+        if (regs.exec.linear != 0) {
+            const GPUVAddr address{regs.dest.Address()};
+            const auto host_ptr = memory_manager.GetPointer(address);
+            // We have to invalidate the destination region to evict any outdated surfaces from the
+            // cache. We do this before actually writing the new data because the destination
+            // address might contain a dirty surface that will have to be written back to memory.
 
-        rasterizer.InvalidateRegion(ToCacheAddr(host_ptr), state.copy_size);
-        std::memcpy(host_ptr, state.inner_buffer.data(), state.copy_size);
-        system.GPU().Maxwell3D().dirty_flags.OnMemoryWrite();
+            rasterizer.InvalidateRegion(ToCacheAddr(host_ptr), state.copy_size);
+            std::memcpy(host_ptr, state.inner_buffer.data(), state.copy_size);
+            system.GPU().Maxwell3D().dirty_flags.OnMemoryWrite();
+        }
     }
 }
 

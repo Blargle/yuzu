@@ -70,15 +70,15 @@ public:
                     }
 
                     u32 BlockWidth() const {
-                        return 1 << block_width.Value();
+                        return 1U << block_width.Value();
                     }
 
                     u32 BlockHeight() const {
-                        return 1 << block_height.Value();
+                        return 1U << block_height.Value();
                     }
 
                     u32 BlockDepth() const {
-                        return 1 << block_depth.Value();
+                        return 1U << block_depth.Value();
                     }
                 } dest;
 
