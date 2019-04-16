@@ -4,6 +4,7 @@
 
 #include <cinttypes>
 #include <cstring>
+#include <utility>
 #include "common/assert.h"
 #include "core/core.h"
 #include "core/core_timing.h"
@@ -23,6 +24,82 @@ Maxwell3D::Maxwell3D(Core::System& system, VideoCore::RasterizerInterface& raste
     : system{system}, rasterizer{rasterizer}, memory_manager{memory_manager}, macro_interpreter{
                                                                                   *this} {
     InitializeRegisterDefaults();
+    InitDirtyRegsMask();
+    InitExecRegsMask();
+}
+
+void Maxwell3D::InitDirtyRegsMask() {
+    std::fill(must_process_dirty.begin(), must_process_dirty.end(), false);
+
+    auto mark_dirty = [&](const u32 start, const u32 end) {
+        for (u32 i = start; i < end; i++) {
+            must_process_dirty[i] = true;
+        }
+    };
+
+    u32 start = MAXWELL3D_REG_INDEX(rt);
+    u32 end = start + (sizeof(regs.rt[0]) / sizeof(u32)) * Regs::NumRenderTargets;
+    mark_dirty(start, end);
+
+    must_process_dirty[MAXWELL3D_REG_INDEX(zeta_enable)] = true;
+    must_process_dirty[MAXWELL3D_REG_INDEX(zeta_width)] = true;
+    must_process_dirty[MAXWELL3D_REG_INDEX(zeta_height)] = true;
+
+    start = MAXWELL3D_REG_INDEX(zeta);
+    end = start + sizeof(regs.zeta) / sizeof(u32);
+    mark_dirty(start, end);
+
+    start = MAXWELL3D_REG_INDEX(shader_config[0]);
+    end = start + sizeof(regs.shader_config[0]) * Regs::MaxShaderProgram / sizeof(u32);
+    mark_dirty(start, end);
+
+    start = MAXWELL3D_REG_INDEX(vertex_attrib_format);
+    end = start + regs.vertex_attrib_format.size();
+    mark_dirty(start, end);
+
+    start =  MAXWELL3D_REG_INDEX(vertex_array);
+    end = start + 4 * 32;
+    mark_dirty(start, end);
+
+    start =  MAXWELL3D_REG_INDEX(vertex_array_limit);
+    end = start + 2 * 32;
+    mark_dirty(start, end);
+
+    start =  MAXWELL3D_REG_INDEX(instanced_arrays);
+    end = start + 32;
+    mark_dirty(start, end);
+}
+
+void Maxwell3D::InitExecRegsMask() {
+    std::fill(must_process_exec.begin(), must_process_exec.end(), false);
+
+    must_process_exec[MAXWELL3D_REG_INDEX(macros.data)] = true;
+    must_process_exec[MAXWELL3D_REG_INDEX(macros.bind)] = true;
+    must_process_exec[MAXWELL3D_REG_INDEX(const_buffer.cb_data[0])] = true;
+    must_process_exec[MAXWELL3D_REG_INDEX(const_buffer.cb_data[1])] = true;
+    must_process_exec[MAXWELL3D_REG_INDEX(const_buffer.cb_data[2])] = true;
+    must_process_exec[MAXWELL3D_REG_INDEX(const_buffer.cb_data[3])] = true;
+    must_process_exec[MAXWELL3D_REG_INDEX(const_buffer.cb_data[4])] = true;
+    must_process_exec[MAXWELL3D_REG_INDEX(const_buffer.cb_data[5])] = true;
+    must_process_exec[MAXWELL3D_REG_INDEX(const_buffer.cb_data[6])] = true;
+    must_process_exec[MAXWELL3D_REG_INDEX(const_buffer.cb_data[7])] = true;
+    must_process_exec[MAXWELL3D_REG_INDEX(const_buffer.cb_data[8])] = true;
+    must_process_exec[MAXWELL3D_REG_INDEX(const_buffer.cb_data[9])] = true;
+    must_process_exec[MAXWELL3D_REG_INDEX(const_buffer.cb_data[10])] = true;
+    must_process_exec[MAXWELL3D_REG_INDEX(const_buffer.cb_data[11])] = true;
+    must_process_exec[MAXWELL3D_REG_INDEX(const_buffer.cb_data[12])] = true;
+    must_process_exec[MAXWELL3D_REG_INDEX(const_buffer.cb_data[13])] = true;
+    must_process_exec[MAXWELL3D_REG_INDEX(const_buffer.cb_data[14])] = true;
+    must_process_exec[MAXWELL3D_REG_INDEX(const_buffer.cb_data[15])] = true;
+    must_process_exec[MAXWELL3D_REG_INDEX(cb_bind[0].raw_config)] = true;
+    must_process_exec[MAXWELL3D_REG_INDEX(cb_bind[1].raw_config)] = true;
+    must_process_exec[MAXWELL3D_REG_INDEX(cb_bind[2].raw_config)] = true;
+    must_process_exec[MAXWELL3D_REG_INDEX(cb_bind[3].raw_config)] = true;
+    must_process_exec[MAXWELL3D_REG_INDEX(cb_bind[4].raw_config)] = true;
+    must_process_exec[MAXWELL3D_REG_INDEX(draw.vertex_end_gl)] = true;
+    must_process_exec[MAXWELL3D_REG_INDEX(clear_buffers)] = true;
+    must_process_exec[MAXWELL3D_REG_INDEX(query.query_get)] = true;
+
 }
 
 void Maxwell3D::InitializeRegisterDefaults() {
@@ -103,99 +180,61 @@ void Maxwell3D::CallMacroMethod(u32 method, std::vector<u32> parameters) {
     macro_interpreter.Execute(search->second, std::move(parameters));
 }
 
-void Maxwell3D::CallMethod(const GPU::MethodCall& method_call) {
-    auto debug_context = system.GetGPUDebugContext();
-
-    const u32 method = method_call.method;
-
-    // It is an error to write to a register other than the current macro's ARG register before it
-    // has finished execution.
-    if (executing_macro != 0) {
-        ASSERT(method == executing_macro + 1);
+void Maxwell3D::CheckDirty(const u32 method) {
+    // Color buffers
+    constexpr u32 first_rt_reg = MAXWELL3D_REG_INDEX(rt);
+    constexpr u32 registers_per_rt = sizeof(regs.rt[0]) / sizeof(u32);
+    if (method >= first_rt_reg &&
+        method < first_rt_reg + registers_per_rt * Regs::NumRenderTargets) {
+        const std::size_t rt_index = (method - first_rt_reg) / registers_per_rt;
+        dirty_flags.color_buffer.set(rt_index);
     }
 
-    // Methods after 0xE00 are special, they're actually triggers for some microcode that was
-    // uploaded to the GPU during initialization.
-    if (method >= MacroRegistersStart) {
-        // We're trying to execute a macro
-        if (executing_macro == 0) {
-            // A macro call must begin by writing the macro method's register, not its argument.
-            ASSERT_MSG((method % 2) == 0,
-                       "Can't start macro execution by writing to the ARGS register");
-            executing_macro = method;
-        }
-
-        macro_params.push_back(method_call.argument);
-
-        // Call the macro when there are no more parameters in the command buffer
-        if (method_call.IsLastCall()) {
-            CallMacroMethod(executing_macro, std::move(macro_params));
-        }
-        return;
+    // Zeta buffer
+    constexpr u32 registers_in_zeta = sizeof(regs.zeta) / sizeof(u32);
+    if (method == MAXWELL3D_REG_INDEX(zeta_enable) ||
+        method == MAXWELL3D_REG_INDEX(zeta_width) ||
+        method == MAXWELL3D_REG_INDEX(zeta_height) ||
+        (method >= MAXWELL3D_REG_INDEX(zeta) &&
+         method < MAXWELL3D_REG_INDEX(zeta) + registers_in_zeta)) {
+        dirty_flags.zeta_buffer = true;
     }
 
-    ASSERT_MSG(method < Regs::NUM_REGS,
-               "Invalid Maxwell3D register, increase the size of the Regs structure");
-
-    if (debug_context) {
-        debug_context->OnEvent(Tegra::DebugContext::Event::MaxwellCommandLoaded, nullptr);
+    // Shader
+    constexpr u32 shader_registers_count =
+        sizeof(regs.shader_config[0]) * Regs::MaxShaderProgram / sizeof(u32);
+    if (method >= MAXWELL3D_REG_INDEX(shader_config[0]) &&
+        method < MAXWELL3D_REG_INDEX(shader_config[0]) + shader_registers_count) {
+        dirty_flags.shaders = true;
     }
 
-    if (regs.reg_array[method] != method_call.argument) {
-        regs.reg_array[method] = method_call.argument;
-        // Color buffers
-        constexpr u32 first_rt_reg = MAXWELL3D_REG_INDEX(rt);
-        constexpr u32 registers_per_rt = sizeof(regs.rt[0]) / sizeof(u32);
-        if (method >= first_rt_reg &&
-            method < first_rt_reg + registers_per_rt * Regs::NumRenderTargets) {
-            const std::size_t rt_index = (method - first_rt_reg) / registers_per_rt;
-            dirty_flags.color_buffer.set(rt_index);
-        }
-
-        // Zeta buffer
-        constexpr u32 registers_in_zeta = sizeof(regs.zeta) / sizeof(u32);
-        if (method == MAXWELL3D_REG_INDEX(zeta_enable) ||
-            method == MAXWELL3D_REG_INDEX(zeta_width) ||
-            method == MAXWELL3D_REG_INDEX(zeta_height) ||
-            (method >= MAXWELL3D_REG_INDEX(zeta) &&
-             method < MAXWELL3D_REG_INDEX(zeta) + registers_in_zeta)) {
-            dirty_flags.zeta_buffer = true;
-        }
-
-        // Shader
-        constexpr u32 shader_registers_count =
-            sizeof(regs.shader_config[0]) * Regs::MaxShaderProgram / sizeof(u32);
-        if (method >= MAXWELL3D_REG_INDEX(shader_config[0]) &&
-            method < MAXWELL3D_REG_INDEX(shader_config[0]) + shader_registers_count) {
-            dirty_flags.shaders = true;
-        }
-
-        // Vertex format
-        if (method >= MAXWELL3D_REG_INDEX(vertex_attrib_format) &&
-            method < MAXWELL3D_REG_INDEX(vertex_attrib_format) + regs.vertex_attrib_format.size()) {
-            dirty_flags.vertex_attrib_format = true;
-        }
-
-        // Vertex buffer
-        if (method >= MAXWELL3D_REG_INDEX(vertex_array) &&
-            method < MAXWELL3D_REG_INDEX(vertex_array) + 4 * 32) {
-            dirty_flags.vertex_array.set((method - MAXWELL3D_REG_INDEX(vertex_array)) >> 2);
-        } else if (method >= MAXWELL3D_REG_INDEX(vertex_array_limit) &&
-                   method < MAXWELL3D_REG_INDEX(vertex_array_limit) + 2 * 32) {
-            dirty_flags.vertex_array.set((method - MAXWELL3D_REG_INDEX(vertex_array_limit)) >> 1);
-        } else if (method >= MAXWELL3D_REG_INDEX(instanced_arrays) &&
-                   method < MAXWELL3D_REG_INDEX(instanced_arrays) + 32) {
-            dirty_flags.vertex_array.set(method - MAXWELL3D_REG_INDEX(instanced_arrays));
-        }
+    // Vertex format
+    if (method >= MAXWELL3D_REG_INDEX(vertex_attrib_format) &&
+        method < MAXWELL3D_REG_INDEX(vertex_attrib_format) + regs.vertex_attrib_format.size()) {
+        dirty_flags.vertex_attrib_format = true;
     }
 
+    // Vertex buffer
+    if (method >= MAXWELL3D_REG_INDEX(vertex_array) &&
+        method < MAXWELL3D_REG_INDEX(vertex_array) + 4 * 32) {
+        dirty_flags.vertex_array.set((method - MAXWELL3D_REG_INDEX(vertex_array)) >> 2);
+    } else if (method >= MAXWELL3D_REG_INDEX(vertex_array_limit) &&
+               method < MAXWELL3D_REG_INDEX(vertex_array_limit) + 2 * 32) {
+        dirty_flags.vertex_array.set((method - MAXWELL3D_REG_INDEX(vertex_array_limit)) >> 1);
+    } else if (method >= MAXWELL3D_REG_INDEX(instanced_arrays) &&
+               method < MAXWELL3D_REG_INDEX(instanced_arrays) + 32) {
+        dirty_flags.vertex_array.set(method - MAXWELL3D_REG_INDEX(instanced_arrays));
+    }
+}
+
+void Maxwell3D::ExecuteMethod(const u32 method, const u32 method_argument) {
     switch (method) {
     case MAXWELL3D_REG_INDEX(macros.data): {
-        ProcessMacroUpload(method_call.argument);
+        ProcessMacroUpload(method_argument);
         break;
     }
     case MAXWELL3D_REG_INDEX(macros.bind): {
-        ProcessMacroBind(method_call.argument);
+        ProcessMacroBind(method_argument);
         break;
     }
     case MAXWELL3D_REG_INDEX(const_buffer.cb_data[0]):
@@ -214,7 +253,7 @@ void Maxwell3D::CallMethod(const GPU::MethodCall& method_call) {
     case MAXWELL3D_REG_INDEX(const_buffer.cb_data[13]):
     case MAXWELL3D_REG_INDEX(const_buffer.cb_data[14]):
     case MAXWELL3D_REG_INDEX(const_buffer.cb_data[15]): {
-        ProcessCBData(method_call.argument);
+        ProcessCBData(method_argument);
         break;
     }
     case MAXWELL3D_REG_INDEX(cb_bind[0].raw_config): {
@@ -255,6 +294,57 @@ void Maxwell3D::CallMethod(const GPU::MethodCall& method_call) {
     }
     default:
         break;
+    }
+}
+
+void Maxwell3D::CallMethod(const GPU::MethodCall& method_call) {
+    auto debug_context = system.GetGPUDebugContext();
+
+    const u32 method = method_call.method;
+
+    // It is an error to write to a register other than the current macro's ARG register before it
+    // has finished execution.
+    if (executing_macro != 0) {
+        ASSERT(method == executing_macro + 1);
+    }
+
+    // Methods after 0xE00 are special, they're actually triggers for some microcode that was
+    // uploaded to the GPU during initialization.
+    if (method >= MacroRegistersStart) {
+        // We're trying to execute a macro
+        if (executing_macro == 0) {
+            // A macro call must begin by writing the macro method's register, not its argument.
+            ASSERT_MSG((method % 2) == 0,
+                       "Can't start macro execution by writing to the ARGS register");
+            executing_macro = method;
+        }
+
+        macro_params.push_back(method_call.argument);
+
+        // Call the macro when there are no more parameters in the command buffer
+        if (method_call.IsLastCall()) {
+            CallMacroMethod(executing_macro, std::move(macro_params));
+        }
+        return;
+    }
+
+    ASSERT_MSG(method < Regs::NUM_REGS,
+               "Invalid Maxwell3D register, increase the size of the Regs structure");
+
+    if (debug_context) {
+        debug_context->OnEvent(Tegra::DebugContext::Event::MaxwellCommandLoaded, nullptr);
+    }
+
+    if (regs.reg_array[method] != method_call.argument) {
+        regs.reg_array[method] = method_call.argument;
+        if (must_process_dirty[method]) {
+            CheckDirty(method);
+        }
+    }
+
+    if (must_process_exec[method])
+    {
+        ExecuteMethod(method, method_call.argument);
     }
 
     if (debug_context) {
