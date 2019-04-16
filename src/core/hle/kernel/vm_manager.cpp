@@ -496,7 +496,9 @@ ResultCode VMManager::MapPhysicalMemory(VAddr address, std::size_t size) {
         if (vma.type == VMAType::Free) {
             const auto alloc_size =
                 std::min(vma_end - traversal_address, end_address - traversal_address + 1);
-
+            if (address > 575050176 && address < 605050176) {
+                address = address;
+            }
             const auto map_result =
                 MapMemoryBlock(traversal_address, std::make_shared<std::vector<u8>>(alloc_size), 0,
                                alloc_size, MemoryState::Heap);

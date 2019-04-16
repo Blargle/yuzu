@@ -320,7 +320,7 @@ static ResultCode UnmapMemory(Core::System& system, VAddr dst_addr, VAddr src_ad
     return vm_manager.UnmapRange(dst_addr, size);
 }
 
-static ResultCode MapPhysicalMemory(VAddr address, u64 size) {
+static ResultCode MapPhysicalMemory(Core::System& system, VAddr address, u64 size) {
     LOG_DEBUG(Kernel_SVC, "called. Address={:016X}, Size={:016X}", address, size);
 
     if (!Common::Is4KBAligned(address)) {
@@ -348,7 +348,7 @@ static ResultCode MapPhysicalMemory(VAddr address, u64 size) {
     return vm_manager.MapPhysicalMemory(address, size);
 }
 
-static ResultCode UnmapPhysicalMemory(VAddr address, u64 size) {
+static ResultCode UnmapPhysicalMemory(Core::System& system, VAddr address, u64 size) {
     LOG_DEBUG(Kernel_SVC, "called. Address={:016X}, Size={:016X}", address, size);
     if (!Common::Is4KBAligned(address)) {
         return ERR_INVALID_ADDRESS;
