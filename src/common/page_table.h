@@ -79,6 +79,12 @@ struct PageTable {
     std::vector<u64> backing_addr;
 
     const std::size_t page_size_in_bits{};
+
+    /**
+     * Size variable that contains the number of entries to this page table's. Equivalent
+     * to page_table->pointers.size(). Used for micro-optimizations on reads.
+     */
+    std::size_t number_of_entries;
 };
 
 } // namespace Common
