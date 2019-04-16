@@ -45,11 +45,6 @@ public:
     /// Reloads the global region from guest memory
     void Reload(u32 size_);
 
-    // TODO(Rodrigo): When global memory is written (STG), implement flushing
-    void Flush() override {
-        UNIMPLEMENTED();
-    }
-
 private:
     VAddr cpu_addr{};
     u32 size{};
@@ -63,6 +58,12 @@ public:
     /// Gets the current specified shader stage program
     GlobalRegion GetGlobalRegion(const GLShader::GlobalMemoryEntry& descriptor,
                                  Tegra::Engines::Maxwell3D::Regs::ShaderStage stage);
+
+protected:
+    // TODO(Rodrigo): When global memory is written (STG), implement flushing
+    void FlushObjectInner(const GlobalRegion& object) override {
+        UNIMPLEMENTED();
+    }
 
 private:
     GlobalRegion TryGetReservedGlobalRegion(CacheAddr addr, u32 size) const;
