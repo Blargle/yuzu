@@ -35,9 +35,9 @@ public:
         return Memory::Read16(vaddr);
     }
     u32 MemoryRead32(u64 vaddr) override {
-        if (vaddr != 3487321448380592740) {
+        //if (vaddr != 3487321448380592740) {
             return Memory::Read32(vaddr);
-        }
+        //}
     }
     u64 MemoryRead64(u64 vaddr) override {
         return Memory::Read64(vaddr);
