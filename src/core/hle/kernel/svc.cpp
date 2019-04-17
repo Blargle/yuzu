@@ -789,10 +789,19 @@ static ResultCode GetInfo(Core::System& system, u64* result, u64 info_id, u64 ha
         PrivilegedProcessId = 19,
         // 5.0.0+
         UserExceptionContextAddr = 20,
+        // 6.0.0+
+        TotalMemoryAvailableWithoutMmHeap = 21,
+        TotalMemoryUsedWithoutMmHeap = 22,
         ThreadTickCount = 0xF0000002,
     };
 
     const auto info_id_type = static_cast<GetInfoType>(info_id);
+
+    const auto& current_process_handle_table = system.Kernel().CurrentProcess()->GetHandleTable();
+    const auto process = current_process_handle_table.Get<Process>(static_cast<Handle>(handle));
+    if (!process) {
+        return ERR_INVALID_HANDLE;
+    }
 
     switch (info_id_type) {
     case GetInfoType::AllowedCPUCoreMask:
@@ -815,12 +824,7 @@ static ResultCode GetInfo(Core::System& system, u64* result, u64 info_id, u64 ha
             return ERR_INVALID_ENUM_VALUE;
         }
 
-        const auto& current_process_handle_table =
-            system.Kernel().CurrentProcess()->GetHandleTable();
-        const auto process = current_process_handle_table.Get<Process>(static_cast<Handle>(handle));
-        if (!process) {
-            return ERR_INVALID_HANDLE;
-        }
+
 
         switch (info_id_type) {
         case GetInfoType::AllowedCPUCoreMask:
@@ -948,6 +952,14 @@ static ResultCode GetInfo(Core::System& system, u64* result, u64 info_id, u64 ha
         LOG_WARNING(Kernel_SVC,
                     "(STUBBED) Attempted to query privileged process id bounds, returned 0");
         *result = 0;
+        return RESULT_SUCCESS;
+
+    case GetInfoType::TotalMemoryAvailableWithoutMmHeap:
+        *result = process->VMManager().GetTotalMemoryUsage();
+        return RESULT_SUCCESS;
+
+    case GetInfoType::TotalMemoryUsedWithoutMmHeap:
+        *result = process->GetTotalPhysicalMemoryUsed();
         return RESULT_SUCCESS;
 
     case GetInfoType::ThreadTickCount: {

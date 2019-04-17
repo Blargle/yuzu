@@ -11,9 +11,11 @@
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/client_port.h"
 #include "core/hle/kernel/client_session.h"
+#include "core/hle/kernel/shared_memory.h"
 #include "core/hle/service/time/interface.h"
 #include "core/hle/service/time/time.h"
 #include "core/settings.h"
+
 
 namespace Service::Time {
 
@@ -60,6 +62,7 @@ static u64 CalendarToPosix(const CalendarTime& calendar_time,
     std::time_t epoch_time = std::mktime(&time);
     return static_cast<u64>(epoch_time);
 }
+
 
 class ISystemClock final : public ServiceFramework<ISystemClock> {
 public:
@@ -265,6 +268,25 @@ void Module::Interface::GetStandardLocalSystemClock(Kernel::HLERequestContext& c
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(RESULT_SUCCESS);
     rb.PushIpcInterface<ISystemClock>();
+}
+
+void Module::Interface::GetSharedMemoryNativeHandle(Kernel::HLERequestContext& ctx) {
+    LOG_WARNING(Service_Time, "STUBBED by me");
+    Core::CurrentProcess()->VMManager().MapMemoryBlock(0, std::make_shared<std::vector<u8>>(0x1100000), 0,
+                                                       0x1000,
+                                                       Kernel::MemoryState::Shared);
+
+    // Create shared font memory object
+    auto& kernel = Core::System::GetInstance().Kernel();
+    shared_time_mem = Kernel::SharedMemory::Create(
+        kernel, Core::CurrentProcess(), 0x1000, Kernel::MemoryPermission::ReadWrite,
+        Kernel::MemoryPermission::Read, 0, Kernel::MemoryRegion::BASE,
+        "time:shared_time_mem");
+
+
+    IPC::ResponseBuilder rb{ctx, 2, 1};
+    rb.Push(RESULT_SUCCESS);
+    rb.PushCopyObjects(shared_time_mem);
 }
 
 void Module::Interface::GetClockSnapshot(Kernel::HLERequestContext& ctx) {

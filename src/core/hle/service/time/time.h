@@ -6,6 +6,7 @@
 
 #include <array>
 #include "common/common_funcs.h"
+#include "core/hle/kernel/shared_memory.h"
 #include "core/hle/service/service.h"
 
 namespace Service::Time {
@@ -85,11 +86,14 @@ public:
         void GetStandardSteadyClock(Kernel::HLERequestContext& ctx);
         void GetTimeZoneService(Kernel::HLERequestContext& ctx);
         void GetStandardLocalSystemClock(Kernel::HLERequestContext& ctx);
+        void GetSharedMemoryNativeHandle(Kernel::HLERequestContext& ctx);
         void GetClockSnapshot(Kernel::HLERequestContext& ctx);
         void CalculateStandardUserSystemClockDifferenceByUser(Kernel::HLERequestContext& ctx);
 
     protected:
         std::shared_ptr<Module> time;
+        /// Handle to shared memory region designated for a shared font
+        Kernel::SharedPtr<Kernel::SharedMemory> shared_time_mem;
     };
 };
 
