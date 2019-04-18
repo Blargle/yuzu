@@ -18,6 +18,7 @@
 #include "core/hle/service/acc/acc_u0.h"
 #include "core/hle/service/acc/acc_u1.h"
 #include "core/hle/service/acc/profile_manager.h"
+#include "common/uuid.h"
 
 namespace Service::Account {
 

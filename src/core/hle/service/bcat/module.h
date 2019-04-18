@@ -17,6 +17,8 @@ public:
 
         void CreateBcatService(Kernel::HLERequestContext& ctx);
 
+        void CreateDeliveryCacheStorageService(Kernel::HLERequestContext& ctx);
+
     protected:
         std::shared_ptr<Module> module;
     };

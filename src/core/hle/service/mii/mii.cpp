@@ -14,6 +14,7 @@
 #include "core/hle/service/mii/mii_manager.h"
 #include "core/hle/service/service.h"
 #include "core/hle/service/sm/sm.h"
+#include "common/uuid.h"
 
 namespace Service::Mii {
 
@@ -48,7 +49,7 @@ public:
             {19, nullptr, "Export"},
             {20, nullptr, "IsBrokenDatabaseWithClearFlag"},
             {21, &IDatabaseService::GetIndex, "GetIndex"},
-            {22, nullptr, "SetInterfaceVersion"},
+            {22, &IDatabaseService::SetInterfaceVersion, "SetInterfaceVersion"},
             {23, nullptr, "Convert"},
         };
         // clang-format on
@@ -348,6 +349,15 @@ private:
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
         rb.Push(index);
+    }
+
+    void SetInterfaceVersion(Kernel::HLERequestContext& ctx) {
+
+        LOG_WARNING(Service_Mii, "(STUBBED by me) called");
+
+        IPC::ResponseBuilder rb{ctx, 2};
+        rb.Push(RESULT_SUCCESS);
+        //rb.Push<u32>(0);
     }
 
     MiiManager db;

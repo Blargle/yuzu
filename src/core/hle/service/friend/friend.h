@@ -17,6 +17,9 @@ public:
 
         void CreateFriendService(Kernel::HLERequestContext& ctx);
 
+        void CreateNotificationService(Kernel::HLERequestContext& ctx);
+
+
     protected:
         std::shared_ptr<Module> module;
     };

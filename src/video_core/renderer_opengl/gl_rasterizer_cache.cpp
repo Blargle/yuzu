@@ -24,6 +24,8 @@
 #include "video_core/textures/convert.h"
 #include "video_core/textures/decoders.h"
 
+#pragma optimize("", off)
+
 namespace OpenGL {
 
 using VideoCore::MortonSwizzle;

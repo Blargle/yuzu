@@ -10,6 +10,8 @@
 #include "video_core/textures/decoders.h"
 #include "video_core/textures/texture.h"
 
+#pragma optimize("", off)
+
 namespace Tegra::Texture {
 
 /**

@@ -401,9 +401,9 @@ void MiiManager::ReadFromFile() {
 MiiStoreData MiiManager::CreateMiiWithUniqueUUID() const {
     auto new_mii = DEFAULT_MII;
 
-    do {
-        new_mii.uuid = Common::UUID::Generate();
-    } while (IndexOf(new_mii.uuid) == INVALID_INDEX);
+    //do {
+        //new_mii.uuid = Common::UUID::Generate();
+    //} while (IndexOf(new_mii.uuid) == INVALID_INDEX);
 
     return new_mii;
 }

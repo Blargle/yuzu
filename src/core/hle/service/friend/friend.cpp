@@ -17,7 +17,7 @@ public:
             {0, nullptr, "GetCompletionEvent"},
             {1, nullptr, "Cancel"},
             {10100, nullptr, "GetFriendListIds"},
-            {10101, nullptr, "GetFriendList"},
+            {10101, &IFriendService::GetFriendList, "GetFriendList"},
             {10102, nullptr, "UpdateFriendInfo"},
             {10110, nullptr, "GetFriendProfileImage"},
             {10200, nullptr, "SendFriendRequestForApplication"},
@@ -94,6 +94,16 @@ public:
     }
 
 private:
+    void GetFriendList(Kernel::HLERequestContext& ctx) {
+        // Stub used by smash
+        LOG_WARNING(Service_ACC, "(STUBBED) called");
+        //std::vector<u8> data = ctx.ReadBuffer(1);
+       // ctx.WriteBuffer(0);
+        IPC::ResponseBuilder rb{ctx, 4};
+        rb.Push(RESULT_SUCCESS);
+        rb.Push<u32>(0);
+    }
+
     void DeclareCloseOnlinePlaySession(Kernel::HLERequestContext& ctx) {
         // Stub used by Splatoon 2
         LOG_WARNING(Service_ACC, "(STUBBED) called");
@@ -114,6 +124,13 @@ void Module::Interface::CreateFriendService(Kernel::HLERequestContext& ctx) {
     rb.Push(RESULT_SUCCESS);
     rb.PushIpcInterface<IFriendService>();
     LOG_DEBUG(Service_ACC, "called");
+}
+
+void Module::Interface::CreateNotificationService(Kernel::HLERequestContext& ctx) {
+    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+    rb.Push(RESULT_SUCCESS);
+    rb.PushIpcInterface<IFriendService>();
+    LOG_WARNING(Service_ACC, "(STUBBED by me) called");
 }
 
 Module::Interface::Interface(std::shared_ptr<Module> module, const char* name)
