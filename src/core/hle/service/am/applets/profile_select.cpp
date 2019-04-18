@@ -10,6 +10,9 @@
 #include "core/frontend/applets/profile_select.h"
 #include "core/hle/service/am/am.h"
 #include "core/hle/service/am/applets/profile_select.h"
+#include "core/hle/result.h"
+#include "core/hle/service/acc/profile_manager.h"
+#include "core/hle/service/am/applets/applets.h"
 
 namespace Service::AM::Applets {
 
@@ -53,9 +56,10 @@ void ProfileSelect::Execute() {
         return;
     }
 
-    const auto& frontend{Core::System::GetInstance().GetProfileSelector()};
+   // const auto& frontend{Service::AM::Applets::GetInstance().GetProfileSelector()};
 
-    frontend.SelectProfile([this](std::optional<Account::UUID> uuid) { SelectionComplete(uuid); });
+    frontend.SelectProfile(
+        [this](std::optional<Common::UUID> uuid) { SelectionComplete(uuid); });
 }
 
 void ProfileSelect::SelectionComplete(std::optional<Common::UUID> uuid) {

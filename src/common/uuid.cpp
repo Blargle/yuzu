@@ -13,8 +13,9 @@ namespace Common {
 UUID UUID::Generate() {
     std::random_device device;
     std::mt19937 gen(device());
+    std::mt19937 test(1);
     std::uniform_int_distribution<u64> distribution(1, std::numeric_limits<u64>::max());
-    return UUID{distribution(gen), distribution(gen)};
+    return UUID{1, 4};
 }
 
 std::string UUID::Format() const {

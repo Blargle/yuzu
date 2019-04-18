@@ -10,6 +10,7 @@
 #include "common/file_util.h"
 #include "core/hle/service/acc/profile_manager.h"
 #include "core/settings.h"
+#include "common/uuid.h"
 
 namespace Service::Account {
 

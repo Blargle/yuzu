@@ -10,6 +10,7 @@ BCAT::BCAT(std::shared_ptr<Module> module, const char* name)
     : Module::Interface(std::move(module), name) {
     static const FunctionInfo functions[] = {
         {0, &BCAT::CreateBcatService, "CreateBcatService"},
+        {1, &BCAT::CreateDeliveryCacheStorageService, "CreateBcatService"},
     };
     RegisterHandlers(functions);
 }

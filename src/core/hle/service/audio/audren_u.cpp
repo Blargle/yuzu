@@ -172,7 +172,7 @@ public:
             {8, nullptr, "GetAudioDeviceOutputVolumeAuto"},
             {10, &IAudioDevice::GetActiveAudioDeviceName, "GetActiveAudioDeviceNameAuto"},
             {11, nullptr, "QueryAudioDeviceInputEvent"},
-            {12, nullptr, "QueryAudioDeviceOutputEvent"},
+            {12, &IAudioDevice::QueryAudioDeviceOutputEvent, "QueryAudioDeviceOutputEvent"},
             {13, nullptr, "GetAudioSystemMasterVolumeSetting"},
         };
         RegisterHandlers(functions);
@@ -219,6 +219,16 @@ private:
     }
 
     void QueryAudioDeviceSystemEvent(Kernel::HLERequestContext& ctx) {
+        LOG_WARNING(Service_Audio, "(STUBBED) called");
+
+        buffer_event.writable->Signal();
+
+        IPC::ResponseBuilder rb{ctx, 2, 1};
+        rb.Push(RESULT_SUCCESS);
+        rb.PushCopyObjects(buffer_event.readable);
+    }
+
+    void QueryAudioDeviceOutputEvent(Kernel::HLERequestContext& ctx) {
         LOG_WARNING(Service_Audio, "(STUBBED) called");
 
         buffer_event.writable->Signal();

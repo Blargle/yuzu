@@ -13,6 +13,7 @@ class IBcatService final : public ServiceFramework<IBcatService> {
 public:
     IBcatService() : ServiceFramework("IBcatService") {
         static const FunctionInfo functions[] = {
+            {10, &IBcatService::EnumerateDeliveryCacheDirectory, "EnumerateDeliveryCacheDirectory"},
             {10100, nullptr, "RequestSyncDeliveryCache"},
             {10101, nullptr, "RequestSyncDeliveryCacheWithDirectoryName"},
             {10200, nullptr, "CancelSyncDeliveryCacheRequest"},
@@ -30,10 +31,29 @@ public:
         };
         RegisterHandlers(functions);
     }
+
+    private:
+    void EnumerateDeliveryCacheDirectory(Kernel::HLERequestContext& ctx) {
+        // Stub used by smash
+        LOG_WARNING(Service_BCAT, "(STUBBED) called");
+        // std::vector<u8> data = ctx.ReadBuffer(1);
+        // ctx.WriteBuffer(0);
+        IPC::ResponseBuilder rb{ctx, 4};
+        rb.Push(RESULT_SUCCESS);
+        rb.Push<u8>(0);
+    }
 };
 
 void Module::Interface::CreateBcatService(Kernel::HLERequestContext& ctx) {
     LOG_DEBUG(Service_BCAT, "called");
+
+    IPC::ResponseBuilder rb{ctx, 2, 0, 1};
+    rb.Push(RESULT_SUCCESS);
+    rb.PushIpcInterface<IBcatService>();
+}
+
+void Module::Interface::CreateDeliveryCacheStorageService(Kernel::HLERequestContext& ctx) {
+    LOG_WARNING(Service_BCAT, "(STUBBED by me) called");
 
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(RESULT_SUCCESS);
