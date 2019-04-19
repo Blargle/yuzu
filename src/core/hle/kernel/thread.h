@@ -126,6 +126,11 @@ public:
     std::string GetName() const override {
         return name;
     }
+
+    void SetName(std::string new_name) {
+        name = std::move(new_name);
+    }
+
     std::string GetTypeName() const override {
         return "Thread";
     }
@@ -367,10 +372,6 @@ public:
         arb_wait_address = address;
     }
 
-    void SetGuestHandle(Handle handle) {
-        guest_handle = handle;
-    }
-
     bool HasWakeupCallback() const {
         return wakeup_callback != nullptr;
     }
@@ -490,9 +491,6 @@ private:
 
     /// If waiting for an AddressArbiter, this is the address being waited on.
     VAddr arb_wait_address{0};
-
-    /// Handle used by guest emulated application to access this thread
-    Handle guest_handle = 0;
 
     /// Handle used as userdata to reference this object when inserting into the CoreTiming queue.
     Handle callback_handle = 0;
