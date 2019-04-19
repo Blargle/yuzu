@@ -46,9 +46,9 @@ GLintptr OGLBufferCache::UploadMemory(GPUVAddr gpu_addr, std::size_t size, std::
     if (!host_ptr) {
         return uploaded_offset;
     }
-    if (size == 209715200) {
-        size = 5200;
-    }
+    //if (size == 209715200) {
+    //    size = 5200;
+    //}
     std::memcpy(buffer_ptr, host_ptr, size);
 
 

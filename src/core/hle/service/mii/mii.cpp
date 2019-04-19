@@ -350,14 +350,16 @@ private:
         rb.Push(RESULT_SUCCESS);
         rb.Push(index);
     }
-
+    u32 version{};
     void SetInterfaceVersion(Kernel::HLERequestContext& ctx) {
 
         LOG_WARNING(Service_Mii, "(STUBBED by me) called");
 
+        IPC::RequestParser rp{ctx};
+        version = rp.Pop<u32>();
+
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
-        //rb.Push<u32>(0);
     }
 
     MiiManager db;

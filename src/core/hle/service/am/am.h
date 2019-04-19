@@ -213,6 +213,8 @@ public:
     ~IApplicationFunctions() override;
 
 private:
+    void InitializeApplicationCopyrightFrameBuffer(Kernel::HLERequestContext& ctx);
+    void SetApplicationCopyrightImage(Kernel::HLERequestContext& ctx);
     void PopLaunchParameter(Kernel::HLERequestContext& ctx);
     void CreateApplicationAndRequestToStartForQuest(Kernel::HLERequestContext& ctx);
     void EnsureSaveData(Kernel::HLERequestContext& ctx);

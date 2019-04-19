@@ -976,8 +976,8 @@ IApplicationFunctions::IApplicationFunctions() : ServiceFramework("IApplicationF
         {71, nullptr, "RequestToReboot"},
         {80, nullptr, "ExitAndRequestToShowThanksMessage"},
         {90, &IApplicationFunctions::EnableApplicationCrashReport, "EnableApplicationCrashReport"},
-        {100, nullptr, "InitializeApplicationCopyrightFrameBuffer"},
-        {101, nullptr, "SetApplicationCopyrightImage"},
+        {100, &IApplicationFunctions::InitializeApplicationCopyrightFrameBuffer, "InitializeApplicationCopyrightFrameBuffer"},
+        {101, &IApplicationFunctions::SetApplicationCopyrightImage, "SetApplicationCopyrightImage"},
         {102, nullptr, "SetApplicationCopyrightVisibility"},
         {110, nullptr, "QueryApplicationPlayStatistics"},
         {120, nullptr, "ExecuteProgram"},
@@ -993,6 +993,22 @@ IApplicationFunctions::IApplicationFunctions() : ServiceFramework("IApplicationF
 }
 
 IApplicationFunctions::~IApplicationFunctions() = default;
+
+void IApplicationFunctions::InitializeApplicationCopyrightFrameBuffer(Kernel::HLERequestContext& ctx) {
+    LOG_WARNING(Service_AM, "(STUBBED by me) called");
+
+    IPC::ResponseBuilder rb{ctx, 3};
+    rb.Push(RESULT_SUCCESS);
+    rb.Push(0);
+}
+
+void IApplicationFunctions::SetApplicationCopyrightImage(Kernel::HLERequestContext& ctx) {
+    LOG_WARNING(Service_AM, "(STUBBED by me) called");
+
+    IPC::ResponseBuilder rb{ctx, 3};
+    rb.Push(RESULT_SUCCESS);
+    rb.Push(0);
+}
 
 void IApplicationFunctions::EnableApplicationCrashReport(Kernel::HLERequestContext& ctx) {
     LOG_WARNING(Service_AM, "(STUBBED) called");

@@ -37,8 +37,10 @@ public:
         // Stub used by smash
         LOG_WARNING(Service_BCAT, "(STUBBED) called");
         // std::vector<u8> data = ctx.ReadBuffer(1);
-        // ctx.WriteBuffer(0);
-        IPC::ResponseBuilder rb{ctx, 4};
+        std::array<u8, 1> test{{0
+        }};
+        ctx.WriteBuffer(test);
+        IPC::ResponseBuilder rb{ctx, 3};
         rb.Push(RESULT_SUCCESS);
         rb.Push<u8>(0);
     }

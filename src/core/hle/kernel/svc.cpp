@@ -39,6 +39,8 @@
 #include "core/hle/service/service.h"
 #include "core/memory.h"
 
+
+
 namespace Kernel {
 namespace {
 
@@ -518,7 +520,7 @@ static ResultCode WaitSynchronization(Core::System& system, Handle* index, VAddr
     using ObjectPtr = Thread::ThreadWaitObjects::value_type;
     Thread::ThreadWaitObjects objects(handle_count);
     const auto& handle_table = system.Kernel().CurrentProcess()->GetHandleTable();
-
+    //auto test = nullptr;
     for (u64 i = 0; i < handle_count; ++i) {
         const Handle handle = Memory::Read32(handles_address + i * sizeof(Handle));
         auto object = handle_table.Get<WaitObject>(handle);
