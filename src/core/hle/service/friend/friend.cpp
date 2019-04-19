@@ -14,7 +14,7 @@ public:
     IFriendService() : ServiceFramework("IFriendService") {
         // clang-format off
         static const FunctionInfo functions[] = {
-            {0, &IFriendService::GetFriendList, "GetCompletionEvent"},
+            {0, nullptr, "GetCompletionEvent"},
             {1, nullptr, "Cancel"},
             {10100, nullptr, "GetFriendListIds"},
             {10101, &IFriendService::GetFriendList, "GetFriendList"},
@@ -94,22 +94,12 @@ public:
     }
 
 private:
-    void GetCompletionEvent(Kernel::HLERequestContext& ctx) {
-        // Stub used by smash
-        LOG_WARNING(Service_ACC, "(STUBBED by me) called");
-        //std::vector<u8> data = ctx.ReadBuffer(1);
-       // ctx.WriteBuffer(0);
-        IPC::ResponseBuilder rb{ctx, 2};
-        rb.Push(RESULT_SUCCESS);
-        rb.Push<u32>(0);
-    }
-
     void GetFriendList(Kernel::HLERequestContext& ctx) {
         // Stub used by smash
-        LOG_WARNING(Service_ACC, "(STUBBED by me) called");
+        LOG_WARNING(Service_ACC, "(STUBBED) called");
         //std::vector<u8> data = ctx.ReadBuffer(1);
        // ctx.WriteBuffer(0);
-        IPC::ResponseBuilder rb{ctx, 3};
+        IPC::ResponseBuilder rb{ctx, 4};
         rb.Push(RESULT_SUCCESS);
         rb.Push<u32>(0);
     }

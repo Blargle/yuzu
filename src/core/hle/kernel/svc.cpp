@@ -522,8 +522,8 @@ static ResultCode WaitSynchronization(Core::System& system, Handle* index, VAddr
     for (u64 i = 0; i < handle_count; ++i) {
         const Handle handle = Memory::Read32(handles_address + i * sizeof(Handle));
         auto object = handle_table.Get<WaitObject>(handle);
-       if (object == nullptr) {
-           object = handle_table.Get<WaitObject>(1);
+        if (object == nullptr) {
+            object = handle_table.Get<WaitObject>(1);
         }
 
         if (object == nullptr) {
@@ -871,7 +871,7 @@ static ResultCode GetInfo(Core::System& system, u64* result, u64 info_id, u64 ha
             return RESULT_SUCCESS;
 
         case GetInfoType::TotalMemoryUsage:
-            *result = process->GetUserPhysicalMemoryUsage();
+            *result = process->VMManager().GetTotalMemoryUsage();
             return RESULT_SUCCESS;
 
         case GetInfoType::TotalPhysicalMemoryUsed:
@@ -958,7 +958,7 @@ static ResultCode GetInfo(Core::System& system, u64* result, u64 info_id, u64 ha
         return RESULT_SUCCESS;
 
     case GetInfoType::TotalMemoryAvailableWithoutMmHeap:
-        *result = process->GetUserPhysicalMemoryUsage();
+        *result = process->VMManager().GetTotalMemoryUsage();
         return RESULT_SUCCESS;
 
     case GetInfoType::TotalMemoryUsedWithoutMmHeap:

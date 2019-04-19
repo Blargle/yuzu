@@ -176,14 +176,12 @@ ResultStatus AppLoader_NSO::Load(Kernel::Process& process) {
 
     // Load module
     const VAddr base_address = process.VMManager().GetCodeRegionBaseAddress();
-    const auto load_address = LoadModule(process, *file, base_address, true);
-    if (!load_address) {
+    if (!LoadModule(process, *file, base_address, true)) {
         return ResultStatus::ErrorLoadingNSO;
     }
     LOG_DEBUG(Loader, "loaded module {} @ 0x{:X}", file->GetName(), base_address);
 
-    const auto image_size = *load_address - base_address;
-    process.Run(base_address, Kernel::THREADPRIO_DEFAULT, Memory::DEFAULT_STACK_SIZE, image_size);
+    process.Run(base_address, Kernel::THREADPRIO_DEFAULT, Memory::DEFAULT_STACK_SIZE);
 
     is_loaded = true;
     return ResultStatus::Success;

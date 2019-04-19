@@ -13,7 +13,6 @@ class IBcatService final : public ServiceFramework<IBcatService> {
 public:
     IBcatService() : ServiceFramework("IBcatService") {
         static const FunctionInfo functions[] = {
-            {1, &IBcatService::Unknown, "EnumerateDeliveryCacheDirectory"},
             {10, &IBcatService::EnumerateDeliveryCacheDirectory, "EnumerateDeliveryCacheDirectory"},
             {10100, nullptr, "RequestSyncDeliveryCache"},
             {10101, nullptr, "RequestSyncDeliveryCacheWithDirectoryName"},
@@ -34,7 +33,7 @@ public:
     }
 
     private:
-    void Unknown(Kernel::HLERequestContext& ctx) {
+    void EnumerateDeliveryCacheDirectory(Kernel::HLERequestContext& ctx) {
         // Stub used by smash
         LOG_WARNING(Service_BCAT, "(STUBBED) called");
         // std::vector<u8> data = ctx.ReadBuffer(1);
@@ -42,16 +41,6 @@ public:
         IPC::ResponseBuilder rb{ctx, 4};
         rb.Push(RESULT_SUCCESS);
         rb.Push<u8>(0);
-    }
-
-    void EnumerateDeliveryCacheDirectory(Kernel::HLERequestContext& ctx) {
-        // Stub used by smash
-        LOG_WARNING(Service_BCAT, "(STUBBED) called");
-        // std::vector<u8> data = ctx.ReadBuffer(1);
-        // ctx.WriteBuffer(0);
-        IPC::ResponseBuilder rb{ctx, 3};
-        rb.Push(RESULT_SUCCESS);
-        rb.Push(0);
     }
 };
 

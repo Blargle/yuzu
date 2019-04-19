@@ -396,7 +396,7 @@ ResultStatus AppLoader_ELF::Load(Kernel::Process& process) {
     const VAddr entry_point = codeset.entrypoint;
 
     process.LoadModule(std::move(codeset), entry_point);
-    process.Run(entry_point, 48, Memory::DEFAULT_STACK_SIZE, 0);
+    process.Run(entry_point, 48, Memory::DEFAULT_STACK_SIZE);
 
     is_loaded = true;
     return ResultStatus::Success;
