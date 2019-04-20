@@ -378,7 +378,11 @@ void GRenderWindow::InitRenderTarget() {
     // WA_DontShowOnScreen, WA_DeleteOnClose
     QSurfaceFormat fmt;
     fmt.setVersion(4, 3);
-    fmt.setProfile(QSurfaceFormat::CompatibilityProfile);
+    if (Settings::values.use_compatibility_profile) {
+        fmt.setProfile(QSurfaceFormat::CompatibilityProfile);
+    } else {
+        fmt.setProfile(QSurfaceFormat::CoreProfile);
+    }
     // TODO: expose a setting for buffer value (ie default/single/double/triple)
     fmt.setSwapBehavior(QSurfaceFormat::DefaultSwapBehavior);
     shared_context = std::make_unique<QOpenGLContext>();
