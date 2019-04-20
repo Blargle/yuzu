@@ -524,9 +524,9 @@ static ResultCode WaitSynchronization(Core::System& system, Handle* index, VAddr
     for (u64 i = 0; i < handle_count; ++i) {
         const Handle handle = Memory::Read32(handles_address + i * sizeof(Handle));
         auto object = handle_table.Get<WaitObject>(handle);
-        if (object == nullptr) {
-            object = handle_table.Get<WaitObject>(1);
-        }
+        //if (object == nullptr) {
+        //    object = handle_table.Get<WaitObject>(1);
+        //}
 
         if (object == nullptr) {
             LOG_ERROR(Kernel_SVC, "Object is a nullptr");

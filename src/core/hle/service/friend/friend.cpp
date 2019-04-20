@@ -6,6 +6,8 @@
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/service/friend/friend.h"
 #include "core/hle/service/friend/interface.h"
+#include "core/hle/kernel/readable_event.h"
+#include "core/hle/kernel/writable_event.h"
 
 namespace Service::Friend {
 
@@ -14,7 +16,7 @@ public:
     IFriendService() : ServiceFramework("IFriendService") {
         // clang-format off
         static const FunctionInfo functions[] = {
-            {0, nullptr, "GetCompletionEvent"},
+            {0, &IFriendService::GetCompletionEvent, "GetCompletionEvent"},
             {1, nullptr, "Cancel"},
             {10100, nullptr, "GetFriendListIds"},
             {10101, &IFriendService::GetFriendList, "GetFriendList"},
@@ -91,18 +93,30 @@ public:
         // clang-format on
 
         RegisterHandlers(functions);
+
+         auto& kernel = Core::System::GetInstance().Kernel();
+        availability_change_event = Kernel::WritableEvent::CreateEventPair(
+            kernel, Kernel::ResetType::OneShot, "IUser:AvailabilityChangeEvent");
     }
 
 private:
+    void GetCompletionEvent(Kernel::HLERequestContext& ctx) {
+        // Stub used by smash
+        LOG_WARNING(Service_BCAT, "(STUBBED by me) called");
+        IPC::ResponseBuilder rb{ctx, 2, 1};
+        rb.Push(RESULT_SUCCESS);
+        rb.PushCopyObjects(availability_change_event.readable);
+    }
+
     void GetFriendList(Kernel::HLERequestContext& ctx) {
         // Stub used by smash
         LOG_WARNING(Service_BCAT, "(STUBBED) called");
-        // std::vector<u8> data = ctx.ReadBuffer(1);
-        std::array<u8, 1> test{{0}};
-        ctx.WriteBuffer(test);
+        // std::vector<u8> data = ctx.ReadBuffer();
+        std::vector<u8> buffer(0);
+        ctx.WriteBuffer(buffer.data(), buffer.size());
         IPC::ResponseBuilder rb{ctx, 3};
         rb.Push(RESULT_SUCCESS);
-        rb.Push<u8>(1);
+        rb.Push<u32>(0);
     }
 
     void DeclareCloseOnlinePlaySession(Kernel::HLERequestContext& ctx) {
@@ -118,6 +132,8 @@ private:
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
     }
+
+    Kernel::EventPair availability_change_event;
 };
 
 void Module::Interface::CreateFriendService(Kernel::HLERequestContext& ctx) {

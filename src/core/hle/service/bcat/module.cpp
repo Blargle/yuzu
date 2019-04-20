@@ -35,14 +35,16 @@ public:
     private:
     void EnumerateDeliveryCacheDirectory(Kernel::HLERequestContext& ctx) {
         // Stub used by smash
-        LOG_WARNING(Service_BCAT, "(STUBBED) called");
-        // std::vector<u8> data = ctx.ReadBuffer(1);
-        std::array<u8, 1> test{{0
-        }};
-        ctx.WriteBuffer(test);
+        LOG_WARNING(Service_BCAT, "(STUBBED by me) called");
+        //std::vector<u8> data = ctx.ReadBuffer();
+        //std::array<u8, 1> test{{0}};
+        //ctx.WriteBuffer(test);
+        std::vector<u8> buffer(0);
+        ctx.WriteBuffer(buffer.data(), buffer.size());
+
         IPC::ResponseBuilder rb{ctx, 3};
         rb.Push(RESULT_SUCCESS);
-        rb.Push<u8>(0);
+        rb.Push<u32>(0);
     }
 };
 
