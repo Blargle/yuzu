@@ -42,7 +42,7 @@ public:
         std::vector<u8> buffer(0);
         ctx.WriteBuffer(buffer.data(), buffer.size());
 
-        IPC::ResponseBuilder rb{ctx, 3};
+      IPC::ResponseBuilder rb{ctx, 3};
         rb.Push(RESULT_SUCCESS);
         rb.Push<u32>(0);
     }

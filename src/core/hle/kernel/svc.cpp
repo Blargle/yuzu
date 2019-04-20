@@ -337,7 +337,7 @@ static ResultCode MapPhysicalMemory(Core::System& system, VAddr address, u64 siz
         return ERR_INVALID_MEMORY_RANGE;
     }
 
-    auto* const current_process = Core::CurrentProcess();
+    auto* const current_process = system.Kernel().CurrentProcess();
     if (current_process->GetExtraResourceSize() == 0) {
         return ERR_INVALID_STATE;
     }
@@ -364,7 +364,7 @@ static ResultCode UnmapPhysicalMemory(Core::System& system, VAddr address, u64 s
         return ERR_INVALID_MEMORY_RANGE;
     }
 
-    auto* const current_process = Core::CurrentProcess();
+    auto* const current_process = system.Kernel().CurrentProcess();
     if (current_process->GetExtraResourceSize() == 0) {
         return ERR_INVALID_STATE;
     }
@@ -883,7 +883,7 @@ static ResultCode GetInfo(Core::System& system, u64* result, u64 info_id, u64 ha
             return RESULT_SUCCESS;
 
         case GetInfoType::ExtraResourceUsage:
-            *result = process->VMManager().GetPhysicalMemoryUsage();
+            *result = process->VMManager().GetMapPhysicalMemoryUsage();
             return RESULT_SUCCESS;
 
         case GetInfoType::TitleId:

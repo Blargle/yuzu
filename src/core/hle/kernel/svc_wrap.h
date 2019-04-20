@@ -41,12 +41,6 @@ template <ResultCode func(Core::System&, u64, u64)>
 void SvcWrap(Core::System& system) {
     FuncReturn(system, func(system, Param(system, 0), Param(system, 1)).raw);
 }
-//
-//template <ResultCode func(u32)>
-//void SvcWrap(Core::System& system) {
-//    FuncReturn(system, func(system, static_cast<u32>(Param(system, 0))).raw);
-//}
-
 
 template <ResultCode func(Core::System&, u32, u32)>
 void SvcWrap(Core::System& system) {
