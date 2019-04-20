@@ -537,11 +537,18 @@ ResultCode VMManager::UnmapPhysicalMemory(VAddr addr, u64 size) {
         return ERR_INVALID_ADDRESS;
     }
 
-    // We have nothing mapped, we can just map directly
-    if (map_physical_memory_used == 0) {
-        LOG_WARNING(Kernel, "Unmap physical memory called when our personal usage is empty");
+    const auto unmap_size_result = SizeOfPhysicalMemoryBlocksToUnmap(addr, size);
+    if (unmap_size_result.Failed()) {
+        return unmap_size_result.Code();
+    }
+
+
+    // Nothing to unmap, so we can just return
+    const std::size_t unmap_size = *unmap_size_result;
+    if (unmap_size == 0) {
         return RESULT_SUCCESS;
     }
+
 
     auto vma = FindVMA(base);
     u64 remaining_to_unmap = size;

@@ -116,7 +116,9 @@ public:
     explicit ISelfController(std::shared_ptr<NVFlinger::NVFlinger> nvflinger);
     ~ISelfController() override;
 
+
 private:
+    void GetAccumulatedSuspendedTickChangedEvent(Kernel::HLERequestContext& ctx);
     void LockExit(Kernel::HLERequestContext& ctx);
     void UnlockExit(Kernel::HLERequestContext& ctx);
     void EnterFatalSection(Kernel::HLERequestContext& ctx);
@@ -136,6 +138,7 @@ private:
 
     std::shared_ptr<NVFlinger::NVFlinger> nvflinger;
     Kernel::EventPair launchable_event;
+    Kernel::EventPair availability_change_event;
     u32 idle_time_detection_extension = 0;
     u64 num_fatal_sections_entered = 0;
 };

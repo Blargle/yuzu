@@ -958,10 +958,12 @@ static ResultCode GetInfo(Core::System& system, u64* result, u64 info_id, u64 ha
         return RESULT_SUCCESS;
 
     case GetInfoType::TotalMemoryAvailableWithoutMmHeap:
+        LOG_WARNING(Kernel_SVC, "(STUBBED by me) TotalMemoryAvailableWithoutMmHeap called");
         *result = process->VMManager().GetTotalMemoryUsage();
         return RESULT_SUCCESS;
 
     case GetInfoType::TotalMemoryUsedWithoutMmHeap:
+        LOG_WARNING(Kernel_SVC, "(STUBBED by me) TotalMemoryUsedWithoutMmHeap called");
         *result = process->GetTotalPhysicalMemoryUsed();
         return RESULT_SUCCESS;
 

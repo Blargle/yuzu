@@ -267,7 +267,7 @@ ISelfController::ISelfController(std::shared_ptr<NVFlinger::NVFlinger> nvflinger
         {71, nullptr, "GetCurrentIlluminanceEx"},
         {80, nullptr, "SetWirelessPriorityMode"},
         {90, nullptr, "GetAccumulatedSuspendedTickValue"},
-        {91, nullptr, "GetAccumulatedSuspendedTickChangedEvent"},
+        {91, &ISelfController::GetAccumulatedSuspendedTickChangedEvent, "GetAccumulatedSuspendedTickChangedEvent"},
         {100, nullptr, "SetAlbumImageTakenNotificationEnabled"},
         {1000, nullptr, "GetDebugStorageChannel"},
     };
@@ -278,9 +278,18 @@ ISelfController::ISelfController(std::shared_ptr<NVFlinger::NVFlinger> nvflinger
     auto& kernel = Core::System::GetInstance().Kernel();
     launchable_event = Kernel::WritableEvent::CreateEventPair(kernel, Kernel::ResetType::Sticky,
                                                               "ISelfController:LaunchableEvent");
+    availability_change_event = Kernel::WritableEvent::CreateEventPair(
+        kernel, Kernel::ResetType::OneShot, "IUser:AvailabilityChangeEvent");
 }
 
 ISelfController::~ISelfController() = default;
+
+void ISelfController::GetAccumulatedSuspendedTickChangedEvent(Kernel::HLERequestContext& ctx) {
+    LOG_WARNING(Service_AM, "(STUBBED by me) called");
+    IPC::ResponseBuilder rb{ctx, 2, 1};
+    rb.Push(RESULT_SUCCESS);
+    rb.PushCopyObjects(availability_change_event.readable);
+}
 
 void ISelfController::LockExit(Kernel::HLERequestContext& ctx) {
     LOG_WARNING(Service_AM, "(STUBBED) called");
