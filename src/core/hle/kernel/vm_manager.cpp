@@ -524,7 +524,7 @@ ResultCode VMManager::MapPhysicalMemory(VAddr address, std::size_t size) {
         iter = std::next(iter);
     }
 
-    map_physical_memory_used += size - mapped_size;
+    physical_memory_used += size - mapped_size;
 
     return RESULT_SUCCESS;
 }
@@ -603,7 +603,7 @@ ResultCode VMManager::UnmapPhysicalMemory(VAddr addr, u64 size) {
         for (auto it = unmapped_regions.begin(); it != unmapped_regions.end(); ++it) {
             last_result = UnmapRange((*it).first, (*it).second);
             if (last_result.IsSuccess()) {
-                map_physical_memory_used -= (*it).second;
+                physical_memory_used -= (*it).second;
             } else {
                 LOG_ERROR(Kernel,
                           "Failed to unmap region addr=0x{:016X}, size=0x{:016X} with error=0x{:X}",
@@ -613,7 +613,7 @@ ResultCode VMManager::UnmapPhysicalMemory(VAddr addr, u64 size) {
                                        std::make_shared<std::vector<u8>>((*it).second, 0), 0,
                                        (*it).second, MemoryState::Heap)
                             .Succeeded()) {
-                        map_physical_memory_used += (*it).second;
+                        physical_memory_used += (*it).second;
                     }
                     --it;
                 }
@@ -1101,10 +1101,6 @@ u64 VMManager::GetHeapRegionSize() const {
     return heap_region_end - heap_region_base;
 }
 
-u64 VMManager::GetTotalHeapSize() const {
-    return GetHeapRegionSize() + map_physical_memory_used;
-}
-
 u64 VMManager::GetCurrentHeapSize() const {
     return heap_end - heap_region_base;
 }
@@ -1159,9 +1155,9 @@ u64 VMManager::GetTLSIORegionSize() const {
     return tls_io_region_end - tls_io_region_base;
 }
 
-u64 VMManager::GetPersonalMmHeapUsage() const {
-    return personal_heap_usage;
-}
+//u64 VMManager::GetPersonalMmHeapUsage() const {
+//    return personal_heap_usage;
+//}
 
 bool VMManager::IsWithinTLSIORegion(VAddr address, u64 size) const {
     return IsInsideAddressRange(address, size, GetTLSIORegionBaseAddress(),
@@ -1182,8 +1178,8 @@ bool VMManager::IsInsideMapRegion(VAddr address, u64 size) const {
     return IsInsideAddressRange(address, size, GetMapRegionBaseAddress(), GetMapRegionEndAddress());
 }
 
-u64 VMManager::GetMapPhysicalMemoryUsage() const {
-    return map_physical_memory_used;
+u64 VMManager::GetPhysicalMemoryUsage() const {
+    return physical_memory_used;
 }
 
 } // namespace Kernel
