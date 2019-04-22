@@ -18,7 +18,9 @@ namespace Service::AM::Applets {
 
 constexpr ResultCode ERR_USER_CANCELLED_SELECTION{ErrorModule::Account, 1};
 
-ProfileSelect::ProfileSelect() = default;
+ProfileSelect::ProfileSelect(const Core::Frontend::ProfileSelectApplet& frontend)
+    : frontend(frontend) {}
+
 ProfileSelect::~ProfileSelect() = default;
 
 void ProfileSelect::Initialize() {

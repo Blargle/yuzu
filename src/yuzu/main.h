@@ -113,6 +113,7 @@ signals:
 
 public slots:
     void OnLoadComplete();
+    void ErrorDisplayDisplayError(QString body);
     void ProfileSelectorSelectProfile();
     void SoftwareKeyboardGetText(const Core::Frontend::SoftwareKeyboardParameters& parameters);
     void SoftwareKeyboardInvokeCheckDialog(std::u16string error_message);
