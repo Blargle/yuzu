@@ -279,6 +279,7 @@ struct VirtualMemoryArea {
     /// Size of the region.
     u64 size = 0;
 
+    MemoryState meminfo_state = MemoryState::Unmapped;
     VMAType type = VMAType::Free;
     VMAPermission permissions = VMAPermission::None;
     MemoryState state = MemoryState::Unmapped;
@@ -627,6 +628,12 @@ public:
 
     /// Determines if the given address range is within the TLS IO region.
     bool IsWithinTLSIORegion(VAddr address, u64 size) const;
+
+    bool IsInsideAddressSpace(VAddr address, u64 size) const;
+
+    bool IsInsideNewMapRegion(VAddr address, u64 size) const;
+
+    bool IsInsideMapRegion(VAddr address, u64 size) const;
 
     /// Gets the total memory allocated via MapPhysicalMemory in bytes.
     u64 GetPhysicalMemoryUsage() const;
