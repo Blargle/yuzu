@@ -16,7 +16,7 @@ Time::Time(std::shared_ptr<Module> time, const char* name)
         {3, &Time::GetTimeZoneService, "GetTimeZoneService"},
         {4, &Time::GetStandardLocalSystemClock, "GetStandardLocalSystemClock"},
         {5, nullptr, "GetEphemeralNetworkSystemClock"},
-        {20, nullptr, "GetSharedMemoryNativeHandle"},
+        {20, &Time::GetSharedMemoryNativeHandle, "GetSharedMemoryNativeHandle"},
         {30, nullptr, "GetStandardNetworkClockOperationEventReadableHandle"},
         {31, nullptr, "GetEphemeralNetworkClockOperationEventReadableHandle"},
         {50, nullptr, "SetStandardSteadyClockInternalOffset"},

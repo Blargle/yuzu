@@ -733,9 +733,18 @@ static ResultCode GetInfo(Core::System& system, u64* result, u64 info_id, u64 ha
         // 5.0.0+
         UserExceptionContextAddr = 20,
         ThreadTickCount = 0xF0000002,
+        // 6.0.0+
+        TotalMemoryAvailableWithoutMmHeap = 21,
+        TotalMemoryUsedWithoutMmHeap = 22,
     };
 
     const auto info_id_type = static_cast<GetInfoType>(info_id);
+
+    const auto& current_process_handle_table = system.Kernel().CurrentProcess()->GetHandleTable();
+    const auto process = current_process_handle_table.Get<Process>(static_cast<Handle>(handle));
+    if (!process) {
+        return ERR_INVALID_HANDLE;
+    }
 
     switch (info_id_type) {
     case GetInfoType::AllowedCPUCoreMask:
@@ -756,13 +765,6 @@ static ResultCode GetInfo(Core::System& system, u64* result, u64 info_id, u64 ha
     case GetInfoType::UserExceptionContextAddr: {
         if (info_sub_id != 0) {
             return ERR_INVALID_ENUM_VALUE;
-        }
-
-        const auto& current_process_handle_table =
-            system.Kernel().CurrentProcess()->GetHandleTable();
-        const auto process = current_process_handle_table.Get<Process>(static_cast<Handle>(handle));
-        if (!process) {
-            return ERR_INVALID_HANDLE;
         }
 
         switch (info_id_type) {
@@ -921,6 +923,18 @@ static ResultCode GetInfo(Core::System& system, u64* result, u64 info_id, u64 ha
         }
 
         *result = out_ticks;
+        return RESULT_SUCCESS;
+    }
+
+    case GetInfoType::TotalMemoryAvailableWithoutMmHeap: {
+        LOG_ERROR(Kernel_SVC, "(STUBBED by me) TotalMemoryAvailableWithoutMmHeap called");
+        *result = process->VMManager().GetTotalMemoryUsage();
+        return RESULT_SUCCESS;
+    }
+
+    case GetInfoType::TotalMemoryUsedWithoutMmHeap: {
+        LOG_ERROR(Kernel_SVC, "(STUBBED by me) TotalMemoryAvailableWithoutMmHeap called");
+        *result = process->GetTotalPhysicalMemoryUsed();
         return RESULT_SUCCESS;
     }
 

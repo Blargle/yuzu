@@ -148,6 +148,9 @@ void ServiceFrameworkBase::ReportUnimplementedFunction(Kernel::HLERequestContext
     }
     buf.push_back('}');
 
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(RESULT_SUCCESS);
+
     UNIMPLEMENTED_MSG("Unknown / unimplemented {}", fmt::to_string(buf));
 }
 
