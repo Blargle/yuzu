@@ -3,9 +3,7 @@
 // Refer to the license.txt file included.
 
 #include <array>
-#include <map>
 #include <memory>
-#include <thread>
 #include <utility>
 
 #include "common/file_util.h"
@@ -20,13 +18,18 @@
 #include "core/file_sys/registered_cache.h"
 #include "core/file_sys/vfs_concat.h"
 #include "core/file_sys/vfs_real.h"
+#include "core/frontend/applets/error.h"
+#include "core/frontend/applets/general_frontend.h"
+#include "core/frontend/applets/profile_select.h"
+#include "core/frontend/applets/software_keyboard.h"
+#include "core/frontend/applets/web_browser.h"
 #include "core/gdbstub/gdbstub.h"
 #include "core/hle/kernel/client_port.h"
 #include "core/hle/kernel/kernel.h"
 #include "core/hle/kernel/process.h"
 #include "core/hle/kernel/scheduler.h"
 #include "core/hle/kernel/thread.h"
-#include "core/hle/service/am/applets/software_keyboard.h"
+#include "core/hle/service/am/applets/applets.h"
 #include "core/hle/service/service.h"
 #include "core/hle/service/sm/sm.h"
 #include "core/loader/loader.h"
@@ -38,8 +41,6 @@
 #include "frontend/applets/software_keyboard.h"
 #include "frontend/applets/web_browser.h"
 #include "video_core/debug_utils/debug_utils.h"
-#include "video_core/gpu_asynch.h"
-#include "video_core/gpu_synch.h"
 #include "video_core/renderer_base.h"
 #include "video_core/video_core.h"
 
@@ -81,7 +82,7 @@ FileSys::VirtualFile GetGameFileFromPath(const FileSys::VirtualFilesystem& vfs,
     return vfs->OpenFile(path, FileSys::Mode::Read);
 }
 struct System::Impl {
-    explicit Impl(System& system) : kernel{system} {}
+    explicit Impl(System& system) : kernel{system}, cpu_core_manager{system} {}
 
     Cpu& CurrentCpuCore() {
         return cpu_core_manager.GetCurrentCore();
@@ -99,6 +100,7 @@ struct System::Impl {
         LOG_DEBUG(HW_Memory, "initialized OK");
 
         core_timing.Initialize();
+        cpu_core_manager.Initialize();
         kernel.Initialize();
 
         const auto current_time = std::chrono::duration_cast<std::chrono::seconds>(
@@ -113,15 +115,7 @@ struct System::Impl {
             content_provider = std::make_unique<FileSys::ContentProviderUnion>();
 
         /// Create default implementations of applets if one is not provided.
-        if (profile_selector == nullptr)
-            profile_selector = std::make_unique<Core::Frontend::DefaultProfileSelectApplet>();
-        if (software_keyboard == nullptr)
-            software_keyboard = std::make_unique<Core::Frontend::DefaultSoftwareKeyboardApplet>();
-        if (web_browser == nullptr)
-            web_browser = std::make_unique<Core::Frontend::DefaultWebBrowserApplet>();
-
-        auto main_process = Kernel::Process::Create(system, "main");
-        kernel.MakeCurrentProcess(main_process.get());
+        applet_manager.SetDefaultAppletsIfMissing();
 
         telemetry_session = std::make_unique<Core::TelemetrySession>();
         service_manager = std::make_shared<Service::SM::ServiceManager>();
@@ -134,15 +128,9 @@ struct System::Impl {
             return ResultStatus::ErrorVideoCore;
         }
 
+        gpu_core = VideoCore::CreateGPU(system);
+
         is_powered_on = true;
-
-        if (Settings::values.use_asynchronous_gpu_emulation) {
-            gpu_core = std::make_unique<VideoCommon::GPUAsynch>(system, *renderer);
-        } else {
-            gpu_core = std::make_unique<VideoCommon::GPUSynch>(system, *renderer);
-        }
-
-        cpu_core_manager.Initialize(system);
 
         LOG_DEBUG(Core, "Initialized OK");
 
@@ -179,7 +167,8 @@ struct System::Impl {
             return init_result;
         }
 
-        const Loader::ResultStatus load_result{app_loader->Load(*kernel.CurrentProcess())};
+        auto main_process = Kernel::Process::Create(system, "main");
+        const auto [load_result, load_parameters] = app_loader->Load(*main_process);
         if (load_result != Loader::ResultStatus::Success) {
             LOG_CRITICAL(Core, "Failed to load ROM (Error {})!", static_cast<int>(load_result));
             Shutdown();
@@ -187,6 +176,16 @@ struct System::Impl {
             return static_cast<ResultStatus>(static_cast<u32>(ResultStatus::ErrorLoader) +
                                              static_cast<u32>(load_result));
         }
+        kernel.MakeCurrentProcess(main_process.get());
+
+        // Main process has been loaded and been made current.
+        // Begin GPU and CPU execution.
+        gpu_core->Start();
+        cpu_core_manager.StartThreads();
+
+        // All threads are started, begin main process execution, now that we're in the clear.
+        main_process->Run(load_parameters->main_thread_priority,
+                          load_parameters->main_thread_stack_size);
 
         status = ResultStatus::Success;
         return status;
@@ -224,9 +223,7 @@ struct System::Impl {
         app_loader.reset();
 
         // Clear all applets
-        profile_selector.reset();
-        software_keyboard.reset();
-        web_browser.reset();
+        applet_manager.ClearAll();
 
         LOG_DEBUG(Core, "Shutdown OK");
     }
@@ -265,9 +262,7 @@ struct System::Impl {
     std::unique_ptr<FileSys::CheatEngine> cheat_engine;
 
     /// Frontend applets
-    std::unique_ptr<Core::Frontend::ProfileSelectApplet> profile_selector;
-    std::unique_ptr<Core::Frontend::SoftwareKeyboardApplet> software_keyboard;
-    std::unique_ptr<Core::Frontend::WebBrowserApplet> web_browser;
+    Service::AM::Applets::AppletManager applet_manager;
 
     /// Service manager
     std::shared_ptr<Service::SM::ServiceManager> service_manager;
@@ -477,20 +472,20 @@ std::shared_ptr<FileSys::VfsFilesystem> System::GetFilesystem() const {
     return impl->virtual_filesystem;
 }
 
-void System::SetProfileSelector(std::unique_ptr<Frontend::ProfileSelectApplet> applet) {
-    impl->profile_selector = std::move(applet);
+void System::SetAppletFrontendSet(Service::AM::Applets::AppletFrontendSet&& set) {
+    impl->applet_manager.SetAppletFrontendSet(std::move(set));
 }
 
-const Frontend::ProfileSelectApplet& System::GetProfileSelector() const {
-    return *impl->profile_selector;
+void System::SetDefaultAppletFrontendSet() {
+    impl->applet_manager.SetDefaultAppletFrontendSet();
 }
 
-void System::SetSoftwareKeyboard(std::unique_ptr<Frontend::SoftwareKeyboardApplet> applet) {
-    impl->software_keyboard = std::move(applet);
+Service::AM::Applets::AppletManager& System::GetAppletManager() {
+    return impl->applet_manager;
 }
 
-const Frontend::SoftwareKeyboardApplet& System::GetSoftwareKeyboard() const {
-    return *impl->software_keyboard;
+const Service::AM::Applets::AppletManager& System::GetAppletManager() const {
+    return impl->applet_manager;
 }
 
 void System::SetContentProvider(std::unique_ptr<FileSys::ContentProviderUnion> provider) {
@@ -512,18 +507,6 @@ void System::RegisterContentProvider(FileSys::ContentProviderUnionSlot slot,
 
 void System::ClearContentProvider(FileSys::ContentProviderUnionSlot slot) {
     impl->content_provider->ClearSlot(slot);
-}
-
-void System::SetWebBrowser(std::unique_ptr<Frontend::WebBrowserApplet> applet) {
-    impl->web_browser = std::move(applet);
-}
-
-Frontend::WebBrowserApplet& System::GetWebBrowser() {
-    return *impl->web_browser;
-}
-
-const Frontend::WebBrowserApplet& System::GetWebBrowser() const {
-    return *impl->web_browser;
 }
 
 System::ResultStatus System::Init(Frontend::EmuWindow& emu_window) {

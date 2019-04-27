@@ -46,8 +46,7 @@ static void ThreadWakeupCallback(u64 thread_handle, [[maybe_unused]] s64 cycles_
 
     bool resume = true;
 
-    if (thread->GetStatus() == ThreadStatus::WaitSynchAny ||
-        thread->GetStatus() == ThreadStatus::WaitSynchAll ||
+    if (thread->GetStatus() == ThreadStatus::WaitSynch ||
         thread->GetStatus() == ThreadStatus::WaitHLEEvent) {
         // Remove the thread from each of its waiting objects' waitlists
         for (const auto& object : thread->GetWaitObjects()) {
@@ -182,7 +181,12 @@ void KernelCore::AppendNewProcess(SharedPtr<Process> process) {
 
 void KernelCore::MakeCurrentProcess(Process* process) {
     impl->current_process = process;
-    Memory::SetCurrentPageTable(&process->VMManager().page_table);
+
+    if (process == nullptr) {
+        return;
+    }
+
+    Memory::SetCurrentPageTable(*process);
 }
 
 Process* KernelCore::CurrentProcess() {

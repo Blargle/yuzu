@@ -91,8 +91,8 @@ void EmuThread::run() {
 
 class GGLContext : public Core::Frontend::GraphicsContext {
 public:
-    explicit GGLContext(QOpenGLContext* shared_context) : surface() {
-        context = std::make_unique<QOpenGLContext>(shared_context);
+    explicit GGLContext(QOpenGLContext* shared_context)
+        : context{std::make_unique<QOpenGLContext>(shared_context)} {
         surface.setFormat(shared_context->format());
         surface.create();
     }
@@ -186,8 +186,7 @@ private:
 };
 
 GRenderWindow::GRenderWindow(QWidget* parent, EmuThread* emu_thread)
-    : QWidget(parent), child(nullptr), context(nullptr), emu_thread(emu_thread) {
-
+    : QWidget(parent), emu_thread(emu_thread) {
     setWindowTitle(QStringLiteral("yuzu %1 | %2-%3")
                        .arg(Common::g_build_name, Common::g_scm_branch, Common::g_scm_desc));
     setAttribute(Qt::WA_AcceptTouchEvents);
@@ -378,7 +377,11 @@ void GRenderWindow::InitRenderTarget() {
     // WA_DontShowOnScreen, WA_DeleteOnClose
     QSurfaceFormat fmt;
     fmt.setVersion(4, 3);
-    fmt.setProfile(QSurfaceFormat::CoreProfile);
+    if (Settings::values.use_compatibility_profile) {
+        fmt.setProfile(QSurfaceFormat::CompatibilityProfile);
+    } else {
+        fmt.setProfile(QSurfaceFormat::CoreProfile);
+    }
     // TODO: expose a setting for buffer value (ie default/single/double/triple)
     fmt.setSwapBehavior(QSurfaceFormat::DefaultSwapBehavior);
     shared_context = std::make_unique<QOpenGLContext>();
