@@ -522,7 +522,7 @@ void Config::ReadPathValues() {
         ReadSetting(QStringLiteral("gameListRootDir"), QStringLiteral(".")).toString();
     UISettings::values.game_dir_deprecated_deepscan =
         ReadSetting(QStringLiteral("gameListDeepScan"), false).toBool();
-    int gamedirs_size = qt_config->beginReadArray(QStringLiteral("gamedirs"));
+    const int gamedirs_size = qt_config->beginReadArray(QStringLiteral("gamedirs"));
     for (int i = 0; i < gamedirs_size; ++i) {
         qt_config->setArrayIndex(i);
         UISettings::GameDir game_dir;
@@ -929,7 +929,7 @@ void Config::SavePathValues() {
     qt_config->beginWriteArray(QStringLiteral("gamedirs"));
     for (int i = 0; i < UISettings::values.game_dirs.size(); ++i) {
         qt_config->setArrayIndex(i);
-        const auto& game_dir = UISettings::values.game_dirs.at(i);
+        const auto& game_dir = UISettings::values.game_dirs[i];
         WriteSetting(QStringLiteral("path"), game_dir.path);
         WriteSetting(QStringLiteral("deep_scan"), game_dir.deep_scan, false);
         WriteSetting(QStringLiteral("expanded"), game_dir.expanded, true);
