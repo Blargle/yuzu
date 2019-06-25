@@ -151,6 +151,10 @@ void ServiceFrameworkBase::ReportUnimplementedFunction(Kernel::HLERequestContext
 
     Core::System::GetInstance().GetReporter().SaveUnimplementedFunctionReport(
         ctx, ctx.GetCommand(), function_name, service_name);
+
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(RESULT_SUCCESS);
+
     UNIMPLEMENTED_MSG("Unknown / unimplemented {}", fmt::to_string(buf));
 }
 
