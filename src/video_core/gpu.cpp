@@ -12,6 +12,7 @@
 #include "video_core/engines/maxwell_3d.h"
 #include "video_core/engines/maxwell_dma.h"
 #include "video_core/gpu.h"
+#include "video_core/gpu_clock.h"
 #include "video_core/memory_manager.h"
 #include "video_core/renderer_base.h"
 
@@ -32,6 +33,7 @@ u32 FramebufferConfig::BytesPerPixel(PixelFormat format) {
 GPU::GPU(Core::System& system, VideoCore::RendererBase& renderer, bool is_async)
     : system{system}, renderer{renderer}, is_async{is_async} {
     auto& rasterizer{renderer.Rasterizer()};
+    clock = std::make_unique<Tegra::GPUClock>();
     memory_manager = std::make_unique<Tegra::MemoryManager>(system, rasterizer);
     dma_pusher = std::make_unique<Tegra::DmaPusher>(*this);
     maxwell_3d = std::make_unique<Engines::Maxwell3D>(system, rasterizer, *memory_manager);
@@ -42,6 +44,14 @@ GPU::GPU(Core::System& system, VideoCore::RendererBase& renderer, bool is_async)
 }
 
 GPU::~GPU() = default;
+
+Tegra::GPUClock& GPU::Clock() {
+    return *clock;
+}
+
+const Tegra::GPUClock& GPU::Clock() const {
+    return *clock;
+}
 
 Engines::Maxwell3D& GPU::Maxwell3D() {
     return *maxwell_3d;
@@ -331,7 +341,7 @@ void GPU::ProcessSemaphoreTriggerMethod() {
         block.sequence = regs.semaphore_sequence;
         // TODO(Kmather73): Generate a real GPU timestamp and write it here instead of
         // CoreTiming
-        block.timestamp = Core::System::GetInstance().CoreTiming().GetTicks();
+        block.timestamp = clock->GetNsTime().count();
         memory_manager->WriteBlock(regs.semaphore_address.SemaphoreAddress(), &block,
                                    sizeof(block));
     } else {

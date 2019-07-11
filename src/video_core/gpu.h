@@ -84,6 +84,7 @@ u32 DepthFormatBytesPerPixel(DepthFormat format);
 
 struct CommandListHeader;
 class DebugContext;
+class GPUClock;
 
 /**
  * Struct describing framebuffer configuration
@@ -152,6 +153,12 @@ public:
 
     /// Calls a GPU method.
     void CallMethod(const MethodCall& method_call);
+
+    /// Returns a reference to the GPU's Clock.
+    Tegra::GPUClock& Clock();
+
+    /// Returns a const reference to the GPU's Clock.
+    const Tegra::GPUClock& Clock() const;
 
     /// Returns a reference to the Maxwell3D GPU engine.
     Engines::Maxwell3D& Maxwell3D();
@@ -272,6 +279,7 @@ protected:
     Core::System& system;
 
 private:
+    std::unique_ptr<GPUClock> clock;
     std::unique_ptr<Tegra::MemoryManager> memory_manager;
 
     /// Mapping of command subchannels to their bound engine ids
