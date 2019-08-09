@@ -22,6 +22,14 @@ private:
     void SendTo(Kernel::HLERequestContext& ctx);
     void Close(Kernel::HLERequestContext& ctx);
 
+    void RecvFrom(Kernel::HLERequestContext& ctx);
+
+    void Bind(Kernel::HLERequestContext& ctx);
+
+    void GetSockName(Kernel::HLERequestContext& ctx);
+
+    void SetSockOpt(Kernel::HLERequestContext& ctx);
+
     /// Id to use for the next open file descriptor.
     u32 next_fd = 1;
 };
