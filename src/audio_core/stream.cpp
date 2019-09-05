@@ -111,8 +111,10 @@ void Stream::PlayNextBuffer() {
 void Stream::ReleaseActiveBuffer() {
     ASSERT(active_buffer);
     released_buffers.push(std::move(active_buffer));
-    release_callback();
-    PlayNextBuffer();
+    if (release_callback) {
+        release_callback();
+        PlayNextBuffer();
+    }
 }
 
 bool Stream::QueueBuffer(BufferPtr&& buffer) {
