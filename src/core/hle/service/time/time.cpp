@@ -24,6 +24,9 @@ static std::chrono::seconds GetSecondsSinceEpoch() {
            Settings::values.custom_rtc_differential;
 }
 
+CalendarTime calendar_time_new;
+CalendarAdditionalInfo additional_info_new;
+
 static void PosixToCalendar(u64 posix_time, CalendarTime& calendar_time,
                             CalendarAdditionalInfo& additional_info,
                             [[maybe_unused]] const TimeZoneRule& /*rule*/) {
@@ -34,17 +37,17 @@ static void PosixToCalendar(u64 posix_time, CalendarTime& calendar_time,
         additional_info = {};
         return;
     }
-    calendar_time.year = static_cast<u16_le>(tm->tm_year + 1900);
-    calendar_time.month = static_cast<u8>(tm->tm_mon + 1);
-    calendar_time.day = static_cast<u8>(tm->tm_mday);
-    calendar_time.hour = static_cast<u8>(tm->tm_hour);
-    calendar_time.minute = static_cast<u8>(tm->tm_min);
-    calendar_time.second = static_cast<u8>(tm->tm_sec);
+    calendar_time_new.year = static_cast<u16_le>(tm->tm_year + 1900);
+    calendar_time_new.month = static_cast<u8>(tm->tm_mon + 1);
+    calendar_time_new.day = static_cast<u8>(tm->tm_mday);
+    calendar_time_new.hour = static_cast<u8>(tm->tm_hour);
+    calendar_time_new.minute = static_cast<u8>(tm->tm_min);
+    calendar_time_new.second = static_cast<u8>(tm->tm_sec);
 
-    additional_info.day_of_week = tm->tm_wday;
-    additional_info.day_of_year = tm->tm_yday;
-    std::memcpy(additional_info.name.data(), "UTC", sizeof("UTC"));
-    additional_info.utc_offset = 0;
+    additional_info_new.day_of_week = tm->tm_wday;
+    additional_info_new.day_of_year = tm->tm_yday;
+    std::memcpy(additional_info_new.name.data(), "UTC", sizeof("UTC"));
+    additional_info_new.utc_offset = 0;
 }
 
 static u64 CalendarToPosix(const CalendarTime& calendar_time,
@@ -208,7 +211,8 @@ private:
 
     void ToCalendarTime(Kernel::HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
-        const u64 posix_time = rp.Pop<u64>();
+        u64 posix_time = rp.Pop<u64>();
+        posix_time = GetSecondsSinceEpoch().count();
         LOG_WARNING(Service_Time, "(STUBBED) called, posix_time=0x{:016X}", posix_time);
 
         TimeZoneRule time_zone_rule{};
@@ -222,13 +226,14 @@ private:
 
         IPC::ResponseBuilder rb{ctx, 10};
         rb.Push(RESULT_SUCCESS);
-        rb.PushRaw(calendar_time);
-        rb.PushRaw(additional_info);
+        rb.PushRaw(calendar_time_new);
+        rb.PushRaw(additional_info_new);
     }
 
     void ToCalendarTimeWithMyRule(Kernel::HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
-        const u64 posix_time = rp.Pop<u64>();
+        u64 posix_time = rp.Pop<u64>();
+        posix_time = GetSecondsSinceEpoch().count();
         LOG_WARNING(Service_Time, "(STUBBED) called, posix_time=0x{:016X}", posix_time);
 
         CalendarTime calendar_time{2018, 1, 1, 0, 0, 0};
@@ -238,8 +243,8 @@ private:
 
         IPC::ResponseBuilder rb{ctx, 10};
         rb.Push(RESULT_SUCCESS);
-        rb.PushRaw(calendar_time);
-        rb.PushRaw(additional_info);
+        rb.PushRaw(calendar_time_new);
+        rb.PushRaw(additional_info_new);
     }
 
     void ToPosixTime(Kernel::HLERequestContext& ctx) {
@@ -347,8 +352,8 @@ void Module::Interface::GetClockSnapshot(Kernel::HLERequestContext& ctx) {
     CalendarAdditionalInfo additional_info{};
     PosixToCalendar(time_since_epoch, calendar_time, additional_info, {});
 
-    clock_snapshot.system_calendar_info = additional_info;
-    clock_snapshot.network_calendar_info = additional_info;
+    clock_snapshot.system_calendar_info = additional_info_new;
+    clock_snapshot.network_calendar_info = additional_info_new;
 
     clock_snapshot.steady_clock_timepoint = steady_clock_time_point;
     clock_snapshot.location_name = LocationName{"UTC"};
